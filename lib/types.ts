@@ -164,7 +164,6 @@ export type Settings = {
   contactPhone: string;
   contactEmail: string;
   address: string;
-  announcement: string;
   facebookUrl: string;
   instagramUrl: string;
 };

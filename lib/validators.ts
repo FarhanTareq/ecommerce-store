@@ -35,6 +35,22 @@ export const productInputSchema = z.object({
 
 export type ProductInput = z.infer<typeof productInputSchema>;
 
+export const categoryInputSchema = z.object({
+  name: z.string().trim().min(2, "Category name is required").max(60),
+  slug: z
+    .string()
+    .trim()
+    .min(2, "Slug is required")
+    .max(80)
+    .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers and hyphens"),
+  description: z.string().trim().max(300).default(""),
+  image: z.union([z.string().trim().url("Image URL is invalid"), z.literal("")]).default(""),
+  sortOrder: z.coerce.number().int().min(0).max(999).default(0),
+  active: z.boolean().default(true),
+});
+
+export type CategoryInput = z.infer<typeof categoryInputSchema>;
+
 export const couponInputSchema = z
   .object({
     code: z
@@ -83,7 +99,6 @@ export const settingsInputSchema = z.object({
   contactPhone: z.string().trim().max(30).default(""),
   contactEmail: z.string().trim().max(120).default(""),
   address: z.string().trim().max(300).default(""),
-  announcement: z.string().trim().max(200).default(""),
   facebookUrl: z.string().trim().max(200).default(""),
   instagramUrl: z.string().trim().max(200).default(""),
 });

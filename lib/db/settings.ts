@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Settings } from "../types";
 import type { SettingsInput } from "../validators";
 import { getDb, isDbConfigured } from "./client";
@@ -6,7 +7,7 @@ import { defaultSettings, mapSettings } from "./mappers";
 const COLLECTION = "settings";
 const DOC_ID = "store";
 
-export async function getSettings(): Promise<Settings> {
+export const getSettings = cache(async (): Promise<Settings> => {
   if (!isDbConfigured()) return defaultSettings;
   try {
     const db = await getDb();
@@ -15,7 +16,7 @@ export async function getSettings(): Promise<Settings> {
   } catch {
     return defaultSettings;
   }
-}
+});
 
 export async function saveSettings(input: SettingsInput) {
   const db = await getDb();

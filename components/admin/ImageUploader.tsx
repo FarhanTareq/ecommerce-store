@@ -11,9 +11,19 @@ type ImageUploaderProps = {
   images: ProductImage[];
   onChange: (images: ProductImage[]) => void;
   enabled: boolean;
+  maxImages?: number;
+  showAlt?: boolean;
+  label?: string;
 };
 
-export default function ImageUploader({ images, onChange, enabled }: ImageUploaderProps) {
+export default function ImageUploader({
+  images,
+  onChange,
+  enabled,
+  maxImages = 8,
+  showAlt = true,
+  label = "Click to upload product images",
+}: ImageUploaderProps) {
   const [manualUrl, setManualUrl] = useState("");
   const { startUpload, isUploading } = useUploadThing("productImage", {
     onClientUploadComplete: (files) => {
@@ -22,7 +32,7 @@ export default function ImageUploader({ images, onChange, enabled }: ImageUpload
         url: file.serverData?.url ?? file.ufsUrl,
         alt: "",
       }));
-      onChange([...images, ...next]);
+      onChange([...images, ...next].slice(-maxImages));
       toast.success(`${next.length} image${next.length > 1 ? "s" : ""} uploaded`);
     },
     onUploadError: (error) => {
@@ -38,7 +48,7 @@ export default function ImageUploader({ images, onChange, enabled }: ImageUpload
       toast.error("Enter a valid image URL");
       return;
     }
-    onChange([...images, { key: "", url: manualUrl.trim(), alt: "" }]);
+    onChange([...images, { key: "", url: manualUrl.trim(), alt: "" }].slice(-maxImages));
     setManualUrl("");
   }
 
@@ -49,7 +59,7 @@ export default function ImageUploader({ images, onChange, enabled }: ImageUpload
           <input
             type="file"
             accept="image/*"
-            multiple
+            multiple={maxImages > 1}
             className="sr-only"
             disabled={isUploading}
             onChange={async (event) => {
@@ -65,8 +75,10 @@ export default function ImageUploader({ images, onChange, enabled }: ImageUpload
           ) : (
             <span className="flex flex-col items-center gap-1">
               <UploadCloud className="h-6 w-6 text-ink/40" />
-              <span className="text-sm font-bold">Click to upload product images</span>
-              <span className="text-xs text-ink/40">JPG, PNG or WebP · up to 8MB each · 8 files max</span>
+              <span className="text-sm font-bold">{label}</span>
+              <span className="text-xs text-ink/40">
+                JPG, PNG or WebP · up to 8MB each{maxImages > 1 ? ` · ${maxImages} files max` : ""}
+              </span>
             </span>
           )}
         </label>
@@ -107,18 +119,20 @@ export default function ImageUploader({ images, onChange, enabled }: ImageUpload
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <input
-                value={image.alt}
-                onChange={(event) =>
-                  onChange(
-                    images.map((item, itemIndex) =>
-                      itemIndex === index ? { ...item, alt: event.target.value } : item,
-                    ),
-                  )
-                }
-                placeholder="Alt text (SEO)"
-                className="w-full border-t border-ink/10 px-2 py-1.5 text-xs outline-none"
-              />
+              {showAlt ? (
+                <input
+                  value={image.alt}
+                  onChange={(event) =>
+                    onChange(
+                      images.map((item, itemIndex) =>
+                        itemIndex === index ? { ...item, alt: event.target.value } : item,
+                      ),
+                    )
+                  }
+                  placeholder="Alt text (SEO)"
+                  className="w-full border-t border-ink/10 px-2 py-1.5 text-xs outline-none"
+                />
+              ) : null}
             </div>
           ))}
         </div>

@@ -166,8 +166,6 @@ export const defaultSettings: Settings = {
   contactPhone: "",
   contactEmail: "",
   address: "",
-  announcement:
-    "Inside Dhaka ৳70 · Outside Dhaka ৳150 · Free delivery over ৳3,000 · COD available",
   facebookUrl: "",
   instagramUrl: "",
 };

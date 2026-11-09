@@ -94,7 +94,7 @@ From the admin panel you can:
 - Upload multiple images per product
 - Set price, discount percent, sizes, and stock per size
 - Manage coupons with min order, max discount, expiry, usage limits, and per-phone limits
-- Update inside/outside Dhaka shipping fees, the free-delivery threshold, bKash/Nagad numbers, contact details, and the announcement ticker
+- Update inside/outside Dhaka shipping fees, the free-delivery threshold, bKash/Nagad numbers, and contact details
 - Change the admin login password at `/admin/account`
 - Update order and payment statuses
 

@@ -33,15 +33,16 @@ export default function ProductGallery({
 
   return (
     <div>
-      <div className="relative aspect-square overflow-hidden rounded-3xl bg-[#edebe5]">
+      <div className="group relative aspect-square overflow-hidden rounded-3xl bg-[#edebe5]">
         <Image
           src={images[active]?.url ?? images[0].url}
           alt={images[active]?.alt || name}
           fill
           priority
           sizes="(max-width: 1024px) 100vw, 50vw"
-          className="object-cover"
+          className="object-cover transition duration-700 group-hover:scale-105"
         />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/15 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
       </div>
       {images.length > 1 ? (
         <div className="no-scrollbar mt-3 flex gap-3 overflow-x-auto">

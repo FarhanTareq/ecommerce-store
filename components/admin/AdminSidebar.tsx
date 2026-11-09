@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Package,
+  LayoutGrid,
   ReceiptText,
   Settings,
   Tag,
@@ -19,6 +20,7 @@ import { cn } from "@/lib/utils";
 const links = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/products", label: "Products", icon: Package },
+  { href: "/admin/categories", label: "Categories", icon: LayoutGrid },
   { href: "/admin/orders", label: "Orders", icon: ReceiptText },
   { href: "/admin/coupons", label: "Coupons", icon: Tag },
   { href: "/admin/settings", label: "Store settings", icon: Settings },

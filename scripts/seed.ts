@@ -49,6 +49,9 @@ async function main() {
 
   const { fallbackCategories } = await import("../lib/db/categories");
   for (const category of fallbackCategories) {
+    const existing = await db
+      .collection("categories")
+      .findOne({ slug: category.slug });
     await db.collection("categories").updateOne(
       { slug: category.slug },
       {
@@ -56,9 +59,9 @@ async function main() {
           name: category.name,
           slug: category.slug,
           description: category.description,
-          image: category.image,
+          image: existing?.image || category.image,
           sortOrder: category.sortOrder,
-          active: true,
+          active: existing?.active ?? true,
           updatedAt: new Date(),
         },
         $setOnInsert: { createdAt: new Date() },
@@ -81,8 +84,6 @@ async function main() {
         contactPhone: "01308880030",
         contactEmail: "farhantareqofficial@gmail.com",
         address: "House 35, Road 05, Sector 12, Uttara, Dhaka-1230",
-        announcement:
-          "Inside Dhaka ৳70 · Outside Dhaka ৳150 · Free delivery over ৳3,000 · COD available",
         facebookUrl: "",
         instagramUrl: "",
         createdAt: new Date(),

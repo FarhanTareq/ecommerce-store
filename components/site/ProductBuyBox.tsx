@@ -165,6 +165,33 @@ export default function ProductBuyBox({ product }: { product: Product }) {
           delivery or send payment via bKash/Nagad. We will call you to confirm the order.
         </p>
       </div>
+
+      <div className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 bg-paper/95 backdrop-blur-xl lg:hidden">
+        <div className="container-x flex items-center gap-2 py-2.5">
+          <div className="min-w-0 shrink-0">
+            <p className="display text-lg font-bold leading-none">{formatBDT(salePrice)}</p>
+            <p className="mt-1 text-[10px] font-semibold text-ink/45">
+              {selected ? `Size ${selected.size}` : "Choose size"}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={add}
+            disabled={!availableSizes.length}
+            className="btn-dark h-11 flex-1 px-3 text-xs"
+          >
+            <ShoppingBag className="h-4 w-4" /> Add to cart
+          </button>
+          <button
+            type="button"
+            onClick={buyNow}
+            disabled={!availableSizes.length}
+            className="btn-volt h-11 shrink-0 px-4 text-xs"
+          >
+            Buy now
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

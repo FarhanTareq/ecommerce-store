@@ -11,6 +11,8 @@ import {
   Truck,
   Wallet,
 } from "lucide-react";
+import AnimatedGrid from "@/components/site/AnimatedGrid";
+import FeaturedProductCard from "@/components/site/FeaturedProductCard";
 import JsonLd from "@/components/site/JsonLd";
 import NewsletterForm from "@/components/site/NewsletterForm";
 import ProductCard from "@/components/site/ProductCard";
@@ -38,7 +40,7 @@ function CategoryTile({ category, index }: { category: Category; index: number }
   return (
     <Link
       href={`/shop/${category.slug}`}
-      className="group relative overflow-hidden rounded-2xl bg-white p-4 ring-1 ring-ink/10 transition hover:-translate-y-1 hover:shadow-xl"
+      className="group relative overflow-hidden rounded-2xl bg-white p-3 ring-1 ring-ink/10 transition hover:-translate-y-1 hover:shadow-xl sm:p-4"
     >
       <div
         className={`relative mb-4 aspect-[4/3] overflow-hidden rounded-xl bg-gradient-to-br ${categoryAccents[index % categoryAccents.length]}`}
@@ -96,10 +98,6 @@ export default async function HomePage() {
       <section className="container-x pt-6 sm:pt-10">
         <div className="grid overflow-hidden rounded-3xl border border-ink/10 bg-white lg:grid-cols-[1.05fr_0.95fr]">
           <div className="relative z-10 flex flex-col justify-center p-7 sm:p-10 lg:p-14">
-            <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-ink/10 bg-paper px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em]">
-              <span className="h-1.5 w-1.5 rounded-full bg-coral" />
-              Bangladesh&apos;s sports gear destination
-            </div>
             <h1 className="display max-w-xl text-5xl font-bold leading-[0.95] sm:text-6xl lg:text-7xl">
               Gear up.
               <br />
@@ -148,18 +146,25 @@ export default async function HomePage() {
                 </span>
               </div>
 
-              {heroImage ? (
-                <div className="relative mx-auto my-6 h-64 w-64 sm:h-80 sm:w-80">
-                  <div className="absolute inset-6 rotate-6 rounded-full bg-volt" />
+              {heroImage && flagship ? (
+                <Link
+                  href={`/product/${flagship.slug}`}
+                  aria-label={`View ${flagship.name}`}
+                  className="group/hero relative mx-auto my-6 block h-64 w-64 sm:h-80 sm:w-80"
+                >
+                  <div className="absolute inset-6 rotate-6 rounded-full bg-volt transition duration-500 group-hover/hero:rotate-12" />
                   <Image
                     src={heroImage.url}
                     alt={heroImage.alt || flagship.name}
                     fill
                     priority
                     sizes="(max-width: 640px) 256px, 320px"
-                    className="relative z-10 rotate-[-4deg] rounded-2xl object-cover shadow-2xl transition duration-700 hover:rotate-0"
+                    className="relative z-10 rotate-[-4deg] rounded-2xl object-cover shadow-2xl transition duration-700 group-hover/hero:rotate-0 group-hover/hero:scale-105"
                   />
-                </div>
+                  <span className="absolute bottom-1 right-1 z-20 grid h-10 w-10 place-items-center rounded-full bg-white text-ink opacity-0 shadow-lg transition duration-300 group-hover/hero:opacity-100">
+                    <ArrowUpRight className="h-4 w-4" />
+                  </span>
+                </Link>
               ) : (
                 <div className="relative mx-auto my-6 grid h-64 w-64 place-items-center rounded-full bg-volt sm:h-80 sm:w-80">
                   <span className="display -rotate-6 text-center text-5xl font-bold text-ink">
@@ -203,20 +208,13 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <div className="mt-8 overflow-hidden border-y border-ink/10 bg-volt py-3">
-        <div className="flex w-max animate-ticker gap-10 whitespace-nowrap text-xs font-extrabold uppercase tracking-[0.2em]">
-          cricket · football · running · fitness · badminton · basketball · delivered nationwide · COD available ·
-          cricket · football · running · fitness · badminton · basketball · delivered nationwide · COD available ·
-        </div>
-      </div>
-
       <section className="container-x mt-16">
         <div className="mb-7 flex items-end justify-between gap-4">
           <div>
             <p className="eyebrow">Shop by sport</p>
             <h2 className="display mt-2 text-3xl font-bold sm:text-4xl">Find your game.</h2>
           </div>
-          <Link href="/shop" className="hidden items-center gap-2 text-sm font-bold hover:text-coral sm:flex">
+          <Link href="/shop" className="flex shrink-0 items-center gap-2 text-xs font-bold hover:text-coral sm:text-sm">
             View all <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -238,11 +236,11 @@ export default async function HomePage() {
           </Link>
         </div>
         {featured.length ? (
-          <div className="grid grid-cols-2 gap-x-4 gap-y-9 md:grid-cols-3 lg:grid-cols-4">
+          <AnimatedGrid className="grid grid-cols-2 gap-x-4 gap-y-9 md:grid-cols-3 lg:grid-cols-4">
             {featured.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <FeaturedProductCard key={product.id} product={product} />
             ))}
-          </div>
+          </AnimatedGrid>
         ) : (
           <div className="rounded-3xl border border-dashed border-ink/20 bg-white p-10 text-center">
             <Sparkles className="mx-auto h-8 w-8 text-ink/30" />

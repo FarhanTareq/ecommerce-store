@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { ObjectId, type Document, type Filter, type Sort } from "mongodb";
 import type { Product, ProductStatus } from "../types";
 import { escapeRegex } from "../utils";
@@ -99,14 +100,16 @@ export async function getProducts(options: ProductListOptions = {}) {
   };
 }
 
-export async function getProductBySlug(slug: string, includeInactive = false) {
-  if (!isDbConfigured()) return null;
-  const db = await getDb();
-  const filter: Filter<Document> = { slug };
-  if (!includeInactive) filter.status = "active";
-  const doc = await db.collection(COLLECTION).findOne(filter);
-  return doc ? mapProduct(doc) : null;
-}
+export const getProductBySlug = cache(
+  async (slug: string, includeInactive = false) => {
+    if (!isDbConfigured()) return null;
+    const db = await getDb();
+    const filter: Filter<Document> = { slug };
+    if (!includeInactive) filter.status = "active";
+    const doc = await db.collection(COLLECTION).findOne(filter);
+    return doc ? mapProduct(doc) : null;
+  },
+);
 
 export async function getProductById(id: string, includeInactive = true) {
   if (!isDbConfigured() || !ObjectId.isValid(id)) return null;
@@ -152,6 +155,61 @@ export async function getProductSlugs() {
   return docs.map((doc) => ({
     slug: String(doc.slug),
     updatedAt: new Date(doc.updatedAt ?? Date.now()).toISOString(),
+  }));
+}
+
+export type ProductSuggestion = {
+  id: string;
+  name: string;
+  slug: string;
+  brand: string;
+  category: string;
+  price: number;
+  discountPercent: number;
+  image: string;
+};
+
+export async function searchProductSuggestions(
+  query: string,
+  limit = 6,
+): Promise<ProductSuggestion[]> {
+  const term = query.trim();
+  if (!isDbConfigured() || term.length < 1) return [];
+  const db = await getDb();
+  const pattern = new RegExp(escapeRegex(term), "i");
+  const docs = await db
+    .collection(COLLECTION)
+    .find({
+      status: "active",
+      $or: [
+        { name: pattern },
+        { brand: pattern },
+        { category: pattern },
+        { tags: pattern },
+      ],
+    })
+    .sort({ featured: -1, createdAt: -1 })
+    .limit(Math.min(10, Math.max(1, limit)))
+    .project({
+      name: 1,
+      slug: 1,
+      brand: 1,
+      category: 1,
+      price: 1,
+      discountPercent: 1,
+      images: { $slice: 1 },
+    })
+    .toArray();
+
+  return docs.map((doc) => ({
+    id: doc._id.toString(),
+    name: String(doc.name ?? ""),
+    slug: String(doc.slug ?? ""),
+    brand: String(doc.brand ?? "Sporsify"),
+    category: String(doc.category ?? ""),
+    price: Number(doc.price ?? 0),
+    discountPercent: Number(doc.discountPercent ?? 0),
+    image: String(doc.images?.[0]?.url ?? ""),
   }));
 }
 

@@ -14,7 +14,7 @@ export default async function StoreLayout({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header categories={categories} announcement={settings.announcement} />
+      <Header categories={categories} />
       <main className="flex-1">{children}</main>
       <Footer categories={categories} settings={settings} />
     </div>

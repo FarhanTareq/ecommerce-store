@@ -18,7 +18,6 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
     contactPhone: settings.contactPhone,
     contactEmail: settings.contactEmail,
     address: settings.address,
-    announcement: settings.announcement,
     facebookUrl: settings.facebookUrl,
     instagramUrl: settings.instagramUrl,
   });
@@ -161,16 +160,6 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
                 placeholder="Shop address, Dhaka"
               />
             </div>
-            <div className="sm:col-span-2">
-              <label className="label" htmlFor="announcement">Ticker announcement</label>
-              <input
-                id="announcement"
-                value={form.announcement}
-                onChange={(event) => update("announcement", event.target.value)}
-                className="input"
-                placeholder="Inside Dhaka ৳70 · Outside Dhaka ৳150 · Free over ৳3,000"
-              />
-            </div>
             <div>
               <label className="label" htmlFor="facebookUrl">Facebook URL</label>
               <input
@@ -209,8 +198,7 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
         <div className="rounded-2xl border border-ink/10 bg-paper p-5 text-xs leading-6 text-ink/55">
           <p className="font-bold text-ink">Tip</p>
           <p className="mt-1">
-            Keep the announcement short — it scrolls across the top of the store. Add your real
-            bKash/Nagad numbers so customers can pay manually.
+            Add your real bKash/Nagad numbers so customers can pay manually.
           </p>
         </div>
       </aside>

@@ -75,7 +75,7 @@ export default async function ProductPage({
         ]}
       />
 
-      <section className="container-x pt-8">
+      <section className="container-x pb-24 pt-8 lg:pb-8">
         <nav className="mb-6 flex flex-wrap items-center gap-2 text-xs font-semibold text-ink/40" aria-label="Breadcrumb">
           <Link href="/" className="hover:text-ink">Home</Link>
           <span>/</span>

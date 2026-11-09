@@ -18,7 +18,7 @@ export default function ProductCard({ product }: { product: Product }) {
             alt={image.alt || product.name}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover transition duration-500 group-hover:scale-105"
+            className="object-cover transition duration-700 group-hover:scale-110"
           />
         ) : (
           <div className="absolute inset-0 grid place-items-center p-6">
@@ -32,7 +32,18 @@ export default function ProductCard({ product }: { product: Product }) {
             </div>
           </div>
         )}
-        <div className="absolute left-3 top-3 flex flex-col gap-1.5">
+        <Link
+          href={`/product/${product.slug}`}
+          className="absolute inset-0 z-10"
+          aria-label={`View ${product.name}`}
+        >
+          <span className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-ink/70 via-ink/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            <span className="mb-4 inline-flex translate-y-2 items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-bold text-ink shadow-lg transition-transform duration-300 group-hover:translate-y-0">
+              View product <ArrowUpRight className="h-3.5 w-3.5" />
+            </span>
+          </span>
+        </Link>
+        <div className="pointer-events-none absolute left-3 top-3 z-20 flex flex-col gap-1.5">
           {product.discountPercent > 0 ? (
             <span className="rounded-full bg-coral px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-white">
               -{product.discountPercent}%
@@ -44,11 +55,11 @@ export default function ProductCard({ product }: { product: Product }) {
             </span>
           ) : null}
         </div>
-        <div className="absolute bottom-3 right-3 translate-y-2 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+        <div className="absolute bottom-3 right-3 z-20 hidden translate-y-2 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 lg:block">
           <QuickAddButton product={product} />
         </div>
         {totalStock === 0 ? (
-          <div className="absolute inset-0 grid place-items-center bg-paper/70 backdrop-blur-[1px]">
+          <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center bg-paper/70 backdrop-blur-[1px]">
             <span className="rounded-full bg-ink px-4 py-2 text-xs font-bold uppercase tracking-wide text-white">
               Sold out
             </span>
@@ -61,7 +72,7 @@ export default function ProductCard({ product }: { product: Product }) {
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink/40">
               {product.brand}
             </p>
-            <h3 className="mt-1 font-bold leading-snug">
+            <h3 className="mt-1 line-clamp-2 font-bold leading-snug">
               <Link href={`/product/${product.slug}`} className="hover:text-coral">
                 {product.name}
               </Link>
@@ -75,12 +86,13 @@ export default function ProductCard({ product }: { product: Product }) {
             <ArrowUpRight className="h-4 w-4" />
           </Link>
         </div>
-        <div className="mt-2 flex items-center justify-between gap-2">
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
           <Price price={product.price} discountPercent={product.discountPercent} size="sm" />
           <span className="text-[11px] font-medium text-ink/40">
             {totalStock > 0 ? `${totalStock} in stock` : "Sold out"}
           </span>
         </div>
+        <QuickAddButton product={product} variant="full" />
       </div>
     </article>
   );

@@ -144,6 +144,9 @@ export default async function AdminDashboardPage() {
               <Link href="/admin/products/new" className="flex items-center justify-between rounded-xl bg-paper px-3 py-2.5 text-sm font-semibold hover:bg-volt">
                 Add a product <ArrowRight className="h-4 w-4" />
               </Link>
+              <Link href="/admin/categories" className="flex items-center justify-between rounded-xl bg-paper px-3 py-2.5 text-sm font-semibold hover:bg-volt">
+                Manage categories <ArrowRight className="h-4 w-4" />
+              </Link>
               <Link href="/admin/coupons" className="flex items-center justify-between rounded-xl bg-paper px-3 py-2.5 text-sm font-semibold hover:bg-volt">
                 Create a coupon <ArrowRight className="h-4 w-4" />
               </Link>

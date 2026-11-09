@@ -9,6 +9,12 @@ import {
   updateProduct,
 } from "@/lib/db/products";
 import {
+  createCategory,
+  deleteCategory,
+  getCategoryById,
+  updateCategory,
+} from "@/lib/db/categories";
+import {
   createCoupon,
   deleteCoupon,
   getCouponById,
@@ -18,6 +24,7 @@ import { updateOrderStatus, updatePaymentStatus } from "@/lib/db/orders";
 import { saveSettings } from "@/lib/db/settings";
 import { deleteUploadedFiles } from "@/lib/uploadthing";
 import {
+  categoryInputSchema,
   couponInputSchema,
   orderStatusSchema,
   productInputSchema,
@@ -41,6 +48,7 @@ function revalidateStore(slug?: string) {
   revalidatePath("/shop");
   revalidatePath("/admin");
   revalidatePath("/admin/products");
+  revalidatePath("/admin/categories");
   revalidatePath("/sitemap.xml");
   if (slug) {
     revalidatePath(`/product/${slug}`);
@@ -91,6 +99,56 @@ export async function deleteProductAction(id: string): Promise<ActionResult> {
     revalidateStore(product.slug);
     revalidatePath(`/shop/${product.category}`);
     return { ok: true, message: "Product deleted" };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+
+export async function saveCategoryAction(
+  raw: unknown,
+  id?: string,
+): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    const parsed = categoryInputSchema.safeParse(raw);
+    if (!parsed.success) {
+      return { ok: false, message: parsed.error.issues[0]?.message ?? "Invalid category" };
+    }
+    const previous = id ? await getCategoryById(id) : null;
+    const saved = id
+      ? await updateCategory(id, parsed.data)
+      : await createCategory(parsed.data);
+    revalidatePath("/");
+    revalidatePath("/shop");
+    revalidatePath("/admin/categories");
+    revalidatePath("/admin/products");
+    revalidatePath("/sitemap.xml");
+    if (previous && previous.slug !== saved.slug) {
+      revalidatePath(`/shop/${previous.slug}`);
+    }
+    revalidatePath(`/shop/${saved.slug}`);
+    return {
+      ok: true,
+      message: id ? "Category updated" : "Category created",
+      id: saved.id,
+    };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+export async function deleteCategoryAction(id: string): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    const removed = await deleteCategory(id);
+    revalidatePath("/");
+    revalidatePath("/shop");
+    revalidatePath("/admin/categories");
+    revalidatePath("/admin/products");
+    revalidatePath("/sitemap.xml");
+    revalidatePath(`/shop/${removed.slug}`);
+    return { ok: true, message: "Category deleted" };
   } catch (error) {
     return fail(error);
   }

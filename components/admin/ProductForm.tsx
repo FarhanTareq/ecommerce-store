@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Loader2, Plus, Save, Trash2 } from "lucide-react";
@@ -7,10 +8,13 @@ import { toast } from "sonner";
 import { saveProductAction } from "@/app/admin/actions";
 import { getSalePrice } from "@/lib/pricing";
 import type { Category, Product, ProductImage, ProductStatus } from "@/lib/types";
-import { formatBDT, slugify } from "@/lib/utils";
+import { cn, formatBDT, slugify } from "@/lib/utils";
 import ImageUploader from "./ImageUploader";
 
 type SizeRow = { size: string; stock: number };
+
+const STANDARD_SIZES = ["S", "M", "L", "XL", "XXL", "XXXL"];
+const DEFAULT_SIZE_STOCK = 10;
 
 type ProductFormProps = {
   product?: Product;
@@ -29,9 +33,8 @@ export default function ProductForm({ product, categories, uploadEnabled }: Prod
   const [price, setPrice] = useState(String(product?.price ?? ""));
   const [discountPercent, setDiscountPercent] = useState(String(product?.discountPercent ?? 0));
   const [images, setImages] = useState<ProductImage[]>(product?.images ?? []);
-  const [sizes, setSizes] = useState<SizeRow[]>(
-    product?.sizes?.length ? product.sizes : [{ size: "One Size", stock: 10 }],
-  );
+  const [sizes, setSizes] = useState<SizeRow[]>(product?.sizes?.length ? product.sizes : []);
+  const [customSize, setCustomSize] = useState("");
   const [tags, setTags] = useState(product?.tags.join(", ") ?? "");
   const [featured, setFeatured] = useState(product?.featured ?? false);
   const [status, setStatus] = useState<ProductStatus>(product?.status ?? "active");
@@ -51,6 +54,33 @@ export default function ProductForm({ product, categories, uploadEnabled }: Prod
           : row,
       ),
     );
+  }
+
+  function addSize(label: string) {
+    const trimmed = label.trim();
+    if (!trimmed) return;
+    setSizes((current) =>
+      current.some((row) => row.size.trim().toLowerCase() === trimmed.toLowerCase())
+        ? current
+        : [...current, { size: trimmed, stock: DEFAULT_SIZE_STOCK }],
+    );
+  }
+
+  function toggleStandardSize(label: string) {
+    setSizes((current) => {
+      const exists = current.some(
+        (row) => row.size.trim().toLowerCase() === label.toLowerCase(),
+      );
+      if (!exists) return [...current, { size: label, stock: DEFAULT_SIZE_STOCK }];
+      return current.filter(
+        (row) => row.size.trim().toLowerCase() !== label.toLowerCase(),
+      );
+    });
+  }
+
+  function addCustomSize() {
+    addSize(customSize);
+    setCustomSize("");
   }
 
   async function submit(event: React.FormEvent) {
@@ -140,7 +170,12 @@ export default function ProductForm({ product, categories, uploadEnabled }: Prod
               />
             </div>
             <div>
-              <label className="label" htmlFor="category">Sport / category</label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="label" htmlFor="category">Sport / category</label>
+                <Link href="/admin/categories" className="mb-1.5 text-[11px] font-bold text-ink/45 hover:text-ink">
+                  Manage
+                </Link>
+              </div>
               <select
                 id="category"
                 value={category}
@@ -241,43 +276,105 @@ export default function ProductForm({ product, categories, uploadEnabled }: Prod
 
         <section className="rounded-2xl border border-ink/10 bg-white p-5">
           <h2 className="font-bold">Sizes & stock</h2>
-          <p className="mt-1 text-xs text-ink/45">Stock is tracked separately for each size.</p>
-          <div className="mt-4 space-y-2">
-            {sizes.map((row, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <input
-                  value={row.size}
-                  onChange={(event) => updateSize(index, "size", event.target.value)}
-                  className="input flex-1"
-                  placeholder="Size label e.g. M, 42, One Size"
-                />
-                <input
-                  type="number"
-                  min={0}
-                  value={row.stock}
-                  onChange={(event) => updateSize(index, "stock", event.target.value)}
-                  className="input w-28"
-                  placeholder="Stock"
-                />
-                <button
-                  type="button"
-                  onClick={() => setSizes((current) => current.filter((_, rowIndex) => rowIndex !== index))}
-                  className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-ink/15 text-coral hover:border-coral"
-                  aria-label="Remove size"
-                  disabled={sizes.length === 1}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
+          <p className="mt-1 text-xs text-ink/45">
+            Click a standard size to make it available, or type a custom size below. Stock is
+            tracked separately for each size.
+          </p>
+
+          <div className="mt-4">
+            <p className="label">Quick add sizes</p>
+            <div className="flex flex-wrap gap-2">
+              {STANDARD_SIZES.map((label) => {
+                const active = sizes.some(
+                  (row) => row.size.trim().toLowerCase() === label.toLowerCase(),
+                );
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => toggleStandardSize(label)}
+                    className={cn(
+                      "min-w-12 rounded-xl border px-4 py-2 text-sm font-bold transition",
+                      active
+                        ? "border-ink bg-ink text-white shadow-sm"
+                        : "border-ink/15 bg-white text-ink/70 hover:border-ink hover:text-ink",
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setSizes((current) => [...current, { size: "", stock: 0 }])}
-            className="mt-3 flex items-center gap-1 text-sm font-bold text-ink/60 hover:text-ink"
-          >
-            <Plus className="h-4 w-4" /> Add another size
-          </button>
+
+          <div className="mt-4">
+            <label className="label" htmlFor="customSize">
+              Add a custom size
+            </label>
+            <div className="flex gap-2">
+              <input
+                id="customSize"
+                value={customSize}
+                onChange={(event) => setCustomSize(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    addCustomSize();
+                  }
+                }}
+                className="input flex-1"
+                placeholder="Type a number or text — e.g. 42, Large, Free Size"
+              />
+              <button
+                type="button"
+                onClick={addCustomSize}
+                disabled={!customSize.trim()}
+                className="btn-dark shrink-0 px-5"
+              >
+                <Plus className="h-4 w-4" /> Add
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-ink/45">
+              Manual sizes can be numbers or text. Press Add or hit Enter.
+            </p>
+          </div>
+
+          <div className="mt-5 space-y-2">
+            {sizes.length ? (
+              sizes.map((row, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <input
+                    value={row.size}
+                    onChange={(event) => updateSize(index, "size", event.target.value)}
+                    className="input flex-1"
+                    placeholder="Size label e.g. M, 42, One Size"
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    value={row.stock}
+                    onChange={(event) => updateSize(index, "stock", event.target.value)}
+                    className="input w-28"
+                    placeholder="Stock"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setSizes((current) => current.filter((_, rowIndex) => rowIndex !== index))}
+                    className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-ink/15 text-coral hover:border-coral"
+                    aria-label="Remove size"
+                    disabled={sizes.length === 1}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))
+            ) : (
+              <p className="rounded-xl border border-dashed border-ink/15 px-4 py-3 text-xs text-ink/45">
+                No sizes yet. Click a quick-add size or type a custom size above.
+              </p>
+            )}
+          </div>
         </section>
 
         <section className="rounded-2xl border border-ink/10 bg-white p-5">

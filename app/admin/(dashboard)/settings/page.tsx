@@ -12,7 +12,7 @@ export default async function AdminSettingsPage() {
         <p className="eyebrow">Configuration</p>
         <h1 className="display mt-1 text-3xl font-bold sm:text-4xl">Store settings.</h1>
         <p className="mt-1 text-sm text-ink/50">
-          Shipping fees, payment numbers, contact details and the storefront announcement.
+          Shipping fees, payment numbers and contact details.
         </p>
       </div>
       <SettingsForm settings={settings} />
