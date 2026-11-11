@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import AdminLoginForm from "@/components/admin/AdminLoginForm";
-import { getServerSession, sessionRole } from "@/lib/server/guard";
+import { getActor } from "@/lib/server/authorization";
+import { firstAllowedAdminPath } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -9,8 +10,8 @@ export default async function AdminLoginPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  const session = await getServerSession();
-  if (session?.user && sessionRole(session) === "admin") redirect("/admin");
+  const actor = await getActor();
+  if (actor?.isAdmin) redirect(firstAllowedAdminPath(actor.permissions));
   const params = await searchParams;
 
   return (

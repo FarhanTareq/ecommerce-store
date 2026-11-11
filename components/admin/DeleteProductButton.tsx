@@ -9,9 +9,11 @@ import { deleteProductAction } from "@/app/admin/actions";
 export default function DeleteProductButton({
   id,
   name,
+  canDelete = true,
 }: {
   id: string;
   name: string;
+  canDelete?: boolean;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -35,6 +37,8 @@ export default function DeleteProductButton({
       setLoading(false);
     }
   }
+
+  if (!canDelete) return null;
 
   return (
     <button

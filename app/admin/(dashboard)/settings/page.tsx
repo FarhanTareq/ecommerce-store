@@ -1,9 +1,12 @@
 import SettingsForm from "@/components/admin/SettingsForm";
 import { getSettings } from "@/lib/db/settings";
+import { requirePagePermission } from "@/lib/server/page-guards";
+import { actorHas } from "@/lib/server/authorization";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminSettingsPage() {
+  const actor = await requirePagePermission("settings.view");
   const settings = await getSettings();
 
   return (
@@ -15,7 +18,10 @@ export default async function AdminSettingsPage() {
           Shipping fees, payment numbers and contact details.
         </p>
       </div>
-      <SettingsForm settings={settings} />
+      <SettingsForm
+        settings={settings}
+        canEdit={actorHas(actor, "settings.edit")}
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import AdminSidebar from "@/components/admin/AdminSidebar";
-import { getServerSession, sessionRole } from "@/lib/server/guard";
+import { getActor } from "@/lib/server/authorization";
 
 export const dynamic = "force-dynamic";
 
@@ -9,13 +9,17 @@ export default async function AdminDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession();
-  if (!session?.user) redirect("/admin/login");
-  if (sessionRole(session) !== "admin") redirect("/admin/login?error=forbidden");
+  const actor = await getActor();
+  if (!actor) redirect("/admin/login");
+  if (!actor.isAdmin) redirect("/admin/forbidden");
 
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
-      <AdminSidebar adminName={session.user.name || session.user.email || "Admin"} />
+      <AdminSidebar
+        adminName={actor.name || actor.email || "Admin"}
+        permissions={actor.permissions}
+        isOwner={actor.isOwner}
+      />
       <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
     </div>
   );

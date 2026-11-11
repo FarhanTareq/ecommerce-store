@@ -9,7 +9,10 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "seed": "tsx scripts/seed.ts",
-    "setup": "tsx scripts/seed.ts --all"
+    "setup": "tsx scripts/seed.ts --all",
+    "owner:init": "tsx scripts/owner-init.ts",
+    "owner:reset": "tsx scripts/owner-reset.ts",
+    "owner:init:dry": "tsx scripts/owner-init.ts --dry-run"
   },
   "dependencies": {
     "@better-auth/mongo-adapter": "^1.7.18",

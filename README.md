@@ -44,9 +44,9 @@ GOOGLE_CLIENT_SECRET=
 
 UPLOADTHING_TOKEN=
 
-ADMIN_EMAIL=admin@sporsify.com
+ADMIN_EMAIL=owner@sporsify.com
 ADMIN_PASSWORD=a-strong-password
-ADMIN_NAME=Sporsify Admin
+ADMIN_NAME=Sporsify Owner
 
 NEXT_PUBLIC_GA_ID=
 GOOGLE_SITE_VERIFICATION=
@@ -60,7 +60,7 @@ For local development use `http://localhost:3000` for both site URL variables.
 2. Create a database user with read/write access.
 3. Allow your IP (and `0.0.0.0/0` for Vercel) in Network Access.
 4. Copy the connection string into `MONGODB_URI`. Keep `MONGODB_DB=sporsify`.
-5. Run `npm run seed` to create indexes, categories, settings, a sample coupon, 20 demo products with images, and the admin account.
+5. Run `npm run owner:init` to create the Owner account, then `npm run seed` for catalog/demo data.
 
 The seed is idempotent. Use `npm run setup` to also re-add demo products/coupons when products already exist.
 
@@ -81,29 +81,44 @@ The seed is idempotent. Use `npm run setup` to also re-add demo products/coupons
 
 Google sign-in only appears when both values are set. Email/password signup works without Google.
 
-## Admin access
+## Owner and admin access
 
-- Admin URL: `/admin/login`
-- Credentials: the `ADMIN_EMAIL` / `ADMIN_PASSWORD` used by `npm run seed`.
-- If the admin account already exists, running the seed again updates its role to `admin`.
-- If you created the account through the normal signup page first, run `npm run seed` again to grant admin access.
+Sporsify has one **Owner** and any number of **Admins**:
 
-From the admin panel you can:
+- Owner login: `/admin/login` (role `owner`). The Owner also gets `/owner` for admin management, approvals, audit logs, and security links.
+- Admins are created by the Owner at `/owner/admins/new` with granular module permissions (products, categories, coupons, orders by status, settings, revenue, sales reports, account).
+- There is no public admin signup. Google sign-in never grants admin access.
+- Only the Owner can change credentials directly. Admins request email/password changes from `/admin/account`; the Owner approves or rejects them in `/owner/requests`.
+- Password recovery is Owner-driven: generate a single-use link in the Owner panel and send it to the admin through your normal channel. Links expire after 30 minutes.
+- If the Owner loses access, run `npm run owner:reset` in a trusted terminal with database access.
+
+Bootstrap commands:
+
+```bash
+npm run owner:init:dry  # check env/database without writing
+npm run owner:init      # create/promote the Owner once
+npm run owner:reset     # reset the Owner password interactively
+```
+
+Owner initialization is idempotent and never overwrites an existing Owner password on redeploy. Remove `ADMIN_PASSWORD` from production env after setup if you prefer.
+
+From the admin panel, permitted admins can:
 
 - Create, edit, archive, and delete products
-- Upload multiple images per product
+- Upload multiple images per product (requires product/category create/edit permission)
 - Set price, discount percent, sizes, and stock per size
 - Manage coupons with min order, max discount, expiry, usage limits, and per-phone limits
-- Update inside/outside Dhaka shipping fees, the free-delivery threshold, bKash/Nagad numbers, and contact details
-- Change the admin login password at `/admin/account`
-- Update order and payment statuses
+- Update inside/outside Dhaka shipping fees, the free-delivery threshold, bKash/Nagad numbers, and contact details (with `settings.edit`)
+- View `/admin/revenue` with `revenue.view` and `/admin/sell` with `sell.view`
+- Update only the order statuses they are allowed to view/edit
+- Change their own password directly only if they are the Owner; admins submit a request
 
 ## Orders and payments
 
 - Guest checkout is the default; no account is required.
 - Cash on delivery creates an order with payment status `cod_pending`.
 - bKash/Nagad require the customer to submit a transaction ID and become `pending_verification`.
-- The admin manually verifies or rejects mobile payments.
+- An admin with the matching order/permission can manually verify or reject mobile payments.
 - Prices, product discounts, stock, shipping, and coupons are always recalculated on the server before an order is created.
 - Stock is decremented per size. On MongoDB Atlas (replica set), order creation uses a transaction; standalone MongoDB falls back to non-transactional writes.
 - Customers receive a private confirmation URL at `/orders/[token]` and can track an order at `/track-order` with the order number and phone number.
@@ -151,13 +166,17 @@ npm run build      # production build
 npm run start      # run the production build
 npm run lint       # ESLint
 npm run typecheck  # TypeScript
-npm run seed       # indexes, admin, categories, settings, coupons, demo data if empty
-npm run setup      # same as seed but also re-adds demo products/coupons
+npm run seed            # indexes, owner bootstrap, categories, settings, coupons, demo data if empty
+npm run setup           # same as seed but also re-adds demo products/coupons
+npm run owner:init      # create/promote the single Owner
+npm run owner:init:dry  # validate owner bootstrap without writing
+npm run owner:reset     # reset owner password from a trusted terminal
 ```
 
 ## Notes
 
 - Product images are optional; products without images show a branded placeholder.
 - The seed adds 20 demo products using Unsplash images. Image URLs are allowed through `next.config.ts`; edit or delete the demo products and upload real photos from the admin panel.
-- Resend/transactional email is not wired up. Order updates are shown on the order page and in the account area.
+- Transactional email is not wired up. Owner approvals show credential-change links once in the Owner panel; order updates are shown on the order page and in the account area.
+- Audit logs, rate limits, and single-use reset tokens are stored in MongoDB. Admin and Owner pages are `noindex` and served with `no-store`.
 - Keep `BETTER_AUTH_SECRET` private and unique per environment.

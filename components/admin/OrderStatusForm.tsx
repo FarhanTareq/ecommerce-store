@@ -10,23 +10,27 @@ import {
 } from "@/app/admin/actions";
 import type { OrderStatus, PaymentStatus } from "@/lib/types";
 
-const statuses: { value: OrderStatus; label: string }[] = [
-  { value: "pending", label: "Pending" },
-  { value: "confirmed", label: "Confirmed" },
-  { value: "packed", label: "Packed" },
-  { value: "shipped", label: "Shipped" },
-  { value: "delivered", label: "Delivered" },
-  { value: "cancelled", label: "Cancelled" },
-];
+const statusLabels: Record<OrderStatus, string> = {
+  pending: "Pending",
+  confirmed: "Confirmed",
+  packed: "Packed",
+  shipped: "Shipped",
+  delivered: "Delivered",
+  cancelled: "Cancelled",
+};
 
 export default function OrderStatusForm({
   orderId,
   status,
   paymentStatus,
+  canEdit,
+  availableStatuses = [],
 }: {
   orderId: string;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
+  canEdit: boolean;
+  availableStatuses?: OrderStatus[];
 }) {
   const router = useRouter();
   const [nextStatus, setNextStatus] = useState<OrderStatus>(status);
@@ -68,6 +72,19 @@ export default function OrderStatusForm({
       setPaymentSaving(false);
     }
   }
+
+  if (!canEdit) {
+    return (
+      <div className="rounded-2xl border border-ink/10 bg-white p-5 text-sm text-ink/50">
+        You have view-only access to this order status. Contact the Owner if you need edit access.
+      </div>
+    );
+  }
+
+  const statuses = availableStatuses.map((value) => ({
+    value,
+    label: statusLabels[value],
+  }));
 
   return (
     <div className="space-y-4">

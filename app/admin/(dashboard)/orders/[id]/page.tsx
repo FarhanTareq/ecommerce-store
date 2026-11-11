@@ -11,6 +11,13 @@ import {
   paymentStatusLabels,
 } from "@/lib/order-status";
 import { formatBDT, formatDate } from "@/lib/utils";
+import {
+  actorCanEditOrderStatus,
+  actorCanViewOrderStatus,
+} from "@/lib/server/authorization";
+import { getAdminPageActor } from "@/lib/server/page-guards";
+import { firstAllowedAdminPath } from "@/lib/permissions";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -20,8 +27,16 @@ export default async function AdminOrderDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const actor = await getAdminPageActor();
   const order = await getOrderById(id);
   if (!order) notFound();
+  if (!actorCanViewOrderStatus(actor, order.status)) {
+    redirect(firstAllowedAdminPath(actor.permissions));
+  }
+  const canEditOrder = actorCanEditOrderStatus(actor, order.status);
+  const editableStatuses = (
+    ["pending", "confirmed", "packed", "shipped", "delivered", "cancelled"] as const
+  ).filter((item) => actorCanEditOrderStatus(actor, item));
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -127,6 +142,8 @@ export default async function AdminOrderDetailPage({
             orderId={order.id}
             status={order.status}
             paymentStatus={order.payment.status}
+            canEdit={canEditOrder}
+            availableStatuses={[...editableStatuses]}
           />
 
           <section className="rounded-2xl border border-ink/10 bg-white p-5">

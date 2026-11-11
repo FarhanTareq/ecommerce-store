@@ -3,33 +3,120 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  BarChart3,
   LayoutDashboard,
-  Package,
   LayoutGrid,
+  LogOut,
+  Package,
   ReceiptText,
   Settings,
-  Tag,
-  LogOut,
+  ShieldCheck,
   Store,
+  Tag,
   UserCog,
+  Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 import { signOut } from "@/lib/auth-client";
+import {
+  canManageOrders,
+  hasPermission,
+} from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
-const links = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/products", label: "Products", icon: Package },
-  { href: "/admin/categories", label: "Categories", icon: LayoutGrid },
-  { href: "/admin/orders", label: "Orders", icon: ReceiptText },
-  { href: "/admin/coupons", label: "Coupons", icon: Tag },
-  { href: "/admin/settings", label: "Store settings", icon: Settings },
-  { href: "/admin/account", label: "Admin account", icon: UserCog },
+type SidebarLink = {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  visible: (permissions: string[], isOwner: boolean) => boolean;
+  ownerOnly?: boolean;
+};
+
+const links: SidebarLink[] = [
+  {
+    href: "/admin",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    visible: (permissions, isOwner) =>
+      isOwner || hasPermission(permissions, "dashboard.view"),
+  },
+  {
+    href: "/admin/products",
+    label: "Products",
+    icon: Package,
+    visible: (permissions, isOwner) =>
+      isOwner || hasPermission(permissions, "products.view"),
+  },
+  {
+    href: "/admin/categories",
+    label: "Categories",
+    icon: LayoutGrid,
+    visible: (permissions, isOwner) =>
+      isOwner || hasPermission(permissions, "categories.view"),
+  },
+  {
+    href: "/admin/orders",
+    label: "Orders",
+    icon: ReceiptText,
+    visible: (permissions, isOwner) =>
+      isOwner || canManageOrders(permissions),
+  },
+  {
+    href: "/admin/revenue",
+    label: "Revenue",
+    icon: Wallet,
+    visible: (permissions, isOwner) =>
+      isOwner || hasPermission(permissions, "revenue.view"),
+  },
+  {
+    href: "/admin/sell",
+    label: "Sales & Reports",
+    icon: BarChart3,
+    visible: (permissions, isOwner) =>
+      isOwner || hasPermission(permissions, "sell.view"),
+  },
+  {
+    href: "/admin/coupons",
+    label: "Coupons",
+    icon: Tag,
+    visible: (permissions, isOwner) =>
+      isOwner || hasPermission(permissions, "coupons.view"),
+  },
+  {
+    href: "/admin/settings",
+    label: "Store settings",
+    icon: Settings,
+    visible: (permissions, isOwner) =>
+      isOwner || hasPermission(permissions, "settings.view"),
+  },
+  {
+    href: "/admin/account",
+    label: "Admin account",
+    icon: UserCog,
+    visible: (permissions, isOwner) =>
+      isOwner || hasPermission(permissions, "account.view"),
+  },
+  {
+    href: "/owner",
+    label: "Owner panel",
+    icon: ShieldCheck,
+    visible: (_permissions, isOwner) => isOwner,
+    ownerOnly: true,
+  },
 ];
 
-export default function AdminSidebar({ adminName }: { adminName: string }) {
+export default function AdminSidebar({
+  adminName,
+  permissions,
+  isOwner,
+}: {
+  adminName: string;
+  permissions: string[];
+  isOwner: boolean;
+}) {
   const pathname = usePathname();
   const router = useRouter();
+  const visibleLinks = links.filter((link) => link.visible(permissions, isOwner));
 
   return (
     <aside className="flex w-full flex-col border-b border-ink/10 bg-ink text-white lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:border-b-0 lg:border-r">
@@ -37,13 +124,13 @@ export default function AdminSidebar({ adminName }: { adminName: string }) {
         <Link href="/admin" className="display text-2xl font-bold">
           Sporsify<span className="text-volt">.</span>
           <span className="ml-2 rounded-md bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-white/60">
-            Admin
+            {isOwner ? "Owner" : "Admin"}
           </span>
         </Link>
       </div>
 
       <nav className="flex flex-row gap-1 overflow-x-auto px-3 pb-3 lg:flex-1 lg:flex-col lg:overflow-visible lg:px-3 lg:pb-0">
-        {links.map((link) => {
+        {visibleLinks.map((link) => {
           const active =
             link.href === "/admin"
               ? pathname === "/admin"
@@ -55,6 +142,7 @@ export default function AdminSidebar({ adminName }: { adminName: string }) {
               className={cn(
                 "flex shrink-0 items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-white/60 transition hover:bg-white/10 hover:text-white",
                 active && "bg-volt text-ink hover:bg-volt hover:text-ink",
+                link.ownerOnly && !active && "text-volt",
               )}
             >
               <link.icon className="h-4 w-4" /> {link.label}

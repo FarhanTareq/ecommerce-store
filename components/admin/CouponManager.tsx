@@ -46,7 +46,17 @@ function toIso(value: string) {
   return value ? new Date(value).toISOString() : "";
 }
 
-export default function CouponManager({ coupons }: { coupons: Coupon[] }) {
+export default function CouponManager({
+  coupons,
+  canCreate,
+  canEdit,
+  canDelete,
+}: {
+  coupons: Coupon[];
+  canCreate: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+}) {
   const router = useRouter();
   const [editing, setEditing] = useState<Coupon | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -124,7 +134,8 @@ export default function CouponManager({ coupons }: { coupons: Coupon[] }) {
   }
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[0.9fr_1.3fr]">
+    <div className={`grid gap-5 ${(editing ? canEdit : canCreate) ? "xl:grid-cols-[0.9fr_1.3fr]" : ""}`}>
+      {(editing ? canEdit : canCreate) ? (
       <form onSubmit={submit} className="h-fit rounded-2xl border border-ink/10 bg-white p-5 xl:sticky xl:top-6">
         <div className="flex items-center justify-between">
           <h2 className="font-bold">{editing ? "Edit coupon" : "Create a coupon"}</h2>
@@ -265,6 +276,7 @@ export default function CouponManager({ coupons }: { coupons: Coupon[] }) {
           {editing ? "Save coupon" : "Create coupon"}
         </button>
       </form>
+      ) : null}
 
       <div className="rounded-2xl border border-ink/10 bg-white">
         <div className="flex items-center justify-between border-b border-ink/10 p-5">
@@ -302,22 +314,26 @@ export default function CouponManager({ coupons }: { coupons: Coupon[] }) {
                   ) : null}
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => startEdit(coupon)}
-                    className="grid h-9 w-9 place-items-center rounded-lg border border-ink/10 text-ink/50 hover:border-ink hover:text-ink"
-                    aria-label={`Edit ${coupon.code}`}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => remove(coupon)}
-                    className="grid h-9 w-9 place-items-center rounded-lg border border-ink/10 text-ink/40 hover:border-coral hover:text-coral"
-                    aria-label={`Delete ${coupon.code}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  {canEdit ? (
+                    <button
+                      type="button"
+                      onClick={() => startEdit(coupon)}
+                      className="grid h-9 w-9 place-items-center rounded-lg border border-ink/10 text-ink/50 hover:border-ink hover:text-ink"
+                      aria-label={`Edit ${coupon.code}`}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                  ) : null}
+                  {canDelete ? (
+                    <button
+                      type="button"
+                      onClick={() => remove(coupon)}
+                      className="grid h-9 w-9 place-items-center rounded-lg border border-ink/10 text-ink/40 hover:border-coral hover:text-coral"
+                      aria-label={`Delete ${coupon.code}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  ) : null}
                 </div>
               </div>
             );
@@ -326,7 +342,7 @@ export default function CouponManager({ coupons }: { coupons: Coupon[] }) {
         {!coupons.length ? (
           <div className="p-10 text-center text-sm text-ink/45">
             <Plus className="mx-auto mb-2 h-8 w-8 text-ink/25" />
-            No coupons yet. Create your first offer.
+            {canCreate ? "No coupons yet. Create your first offer." : "No coupons yet."}
           </div>
         ) : null}
       </div>

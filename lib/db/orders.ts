@@ -149,6 +149,7 @@ export async function getOrderById(id: string) {
 
 export async function getOrders(options: {
   status?: string;
+  statuses?: string[];
   search?: string;
   page?: number;
   pageSize?: number;
@@ -159,7 +160,11 @@ export async function getOrders(options: {
   const page = Math.max(1, options.page ?? 1);
   const pageSize = Math.min(100, Math.max(1, options.pageSize ?? 20));
   const filter: Filter<Document> = {};
-  if (options.status && options.status !== "all") filter.status = options.status;
+  if (options.statuses && options.statuses.length) {
+    filter.status = { $in: options.statuses };
+  } else if (options.status && options.status !== "all") {
+    filter.status = options.status;
+  }
   if (options.search?.trim()) {
     const pattern = new RegExp(options.search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
     filter.$or = [
@@ -238,7 +243,10 @@ export async function updatePaymentStatus(
   return mapOrder(doc);
 }
 
-export async function getOrderStats() {
+export async function getOrderStats(options: {
+  statuses?: OrderStatus[];
+  includeRevenue?: boolean;
+} = {}) {
   if (!isDbConfigured()) {
     return { total: 0, pending: 0, today: 0, revenue: 0, delivered: 0 };
   }
@@ -246,17 +254,32 @@ export async function getOrderStats() {
   const collection = db.collection(COLLECTION);
   const start = new Date();
   start.setHours(0, 0, 0, 0);
+  const allowedStatuses = options.statuses;
+  const statusFilter = allowedStatuses
+    ? { status: { $in: allowedStatuses } }
+    : {};
+  const pendingStatuses = allowedStatuses
+    ? allowedStatuses.filter((status) =>
+        ["pending", "confirmed", "packed"].includes(status),
+      )
+    : ["pending", "confirmed", "packed"];
   const [total, pending, today, delivered, revenueRows] = await Promise.all([
-    collection.countDocuments({}),
-    collection.countDocuments({ status: { $in: ["pending", "confirmed", "packed"] } }),
-    collection.countDocuments({ createdAt: { $gte: start } }),
-    collection.countDocuments({ status: "delivered" }),
-    collection
-      .aggregate([
-        { $match: { status: { $ne: "cancelled" } } },
-        { $group: { _id: null, revenue: { $sum: "$total" } } },
-      ])
-      .toArray(),
+    collection.countDocuments(statusFilter),
+    pendingStatuses.length
+      ? collection.countDocuments({ status: { $in: pendingStatuses } })
+      : Promise.resolve(0),
+    collection.countDocuments({ ...statusFilter, createdAt: { $gte: start } }),
+    allowedStatuses && !allowedStatuses.includes("delivered")
+      ? Promise.resolve(0)
+      : collection.countDocuments({ status: "delivered" }),
+    options.includeRevenue === false
+      ? Promise.resolve([])
+      : collection
+          .aggregate([
+            { $match: { status: { $ne: "cancelled" } } },
+            { $group: { _id: null, revenue: { $sum: "$total" } } },
+          ])
+          .toArray(),
   ]);
   return {
     total,

@@ -20,9 +20,15 @@ type ProductFormProps = {
   product?: Product;
   categories: Category[];
   uploadEnabled: boolean;
+  readOnly?: boolean;
 };
 
-export default function ProductForm({ product, categories, uploadEnabled }: ProductFormProps) {
+export default function ProductForm({
+  product,
+  categories,
+  uploadEnabled,
+  readOnly = false,
+}: ProductFormProps) {
   const router = useRouter();
   const [name, setName] = useState(product?.name ?? "");
   const [slug, setSlug] = useState(product?.slug ?? "");
@@ -85,6 +91,7 @@ export default function ProductForm({ product, categories, uploadEnabled }: Prod
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (readOnly) return;
     setSaving(true);
     try {
       const result = await saveProductAction(
@@ -126,7 +133,13 @@ export default function ProductForm({ product, categories, uploadEnabled }: Prod
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-5 xl:grid-cols-[1.5fr_0.8fr]">
+    <form onSubmit={submit}>
+      {readOnly ? (
+        <p className="mb-4 rounded-xl border border-ink/10 bg-white p-3 text-xs text-ink/50">
+          You have view-only access to this product.
+        </p>
+      ) : null}
+      <fieldset disabled={readOnly} className="grid gap-5 xl:grid-cols-[1.5fr_0.8fr]">
       <div className="space-y-5">
         <section className="rounded-2xl border border-ink/10 bg-white p-5">
           <h2 className="font-bold">Product basics</h2>
@@ -417,23 +430,25 @@ export default function ProductForm({ product, categories, uploadEnabled }: Prod
       </div>
 
       <aside className="h-fit space-y-4 xl:sticky xl:top-6">
-        <div className="rounded-2xl border border-ink/10 bg-white p-5">
-          <h2 className="font-bold">Publish</h2>
-          <p className="mt-1 text-xs text-ink/45">
-            Changes go live on the storefront immediately after saving.
-          </p>
-          <button type="submit" disabled={saving} className="btn-volt mt-4 w-full">
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            {product ? "Save changes" : "Create product"}
-          </button>
-          <button
-            type="button"
-            onClick={() => router.push("/admin/products")}
-            className="btn-ghost mt-2 w-full"
-          >
-            Cancel
-          </button>
-        </div>
+        {!readOnly ? (
+          <div className="rounded-2xl border border-ink/10 bg-white p-5">
+            <h2 className="font-bold">Publish</h2>
+            <p className="mt-1 text-xs text-ink/45">
+              Changes go live on the storefront immediately after saving.
+            </p>
+            <button type="submit" disabled={saving} className="btn-volt mt-4 w-full">
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {product ? "Save changes" : "Create product"}
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/admin/products")}
+              className="btn-ghost mt-2 w-full"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : null}
 
         <div className="rounded-2xl border border-ink/10 bg-white p-5">
           <p className="label">Live preview</p>
@@ -459,6 +474,7 @@ export default function ProductForm({ product, categories, uploadEnabled }: Prod
           </div>
         </div>
       </aside>
+      </fieldset>
     </form>
   );
 }

@@ -7,7 +7,13 @@ import { toast } from "sonner";
 import { saveSettingsAction } from "@/app/admin/actions";
 import type { Settings } from "@/lib/types";
 
-export default function SettingsForm({ settings }: { settings: Settings }) {
+export default function SettingsForm({
+  settings,
+  canEdit,
+}: {
+  settings: Settings;
+  canEdit: boolean;
+}) {
   const router = useRouter();
   const [form, setForm] = useState({
     insideDhakaFee: String(settings.insideDhakaFee),
@@ -51,7 +57,13 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-5 xl:grid-cols-[1.4fr_0.7fr]">
+    <form onSubmit={submit}>
+      {!canEdit ? (
+        <p className="mb-4 rounded-xl border border-ink/10 bg-white p-3 text-xs text-ink/50">
+          You have view-only access to store settings.
+        </p>
+      ) : null}
+      <fieldset disabled={!canEdit} className="grid gap-5 xl:grid-cols-[1.4fr_0.7fr]">
       <div className="space-y-5">
         <section className="rounded-2xl border border-ink/10 bg-white p-5">
           <h2 className="font-bold">Delivery & shipping</h2>
@@ -202,6 +214,7 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
           </p>
         </div>
       </aside>
+      </fieldset>
     </form>
   );
 }

@@ -2,10 +2,12 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import ProductForm from "@/components/admin/ProductForm";
 import { getCategories } from "@/lib/db/categories";
+import { requirePagePermission } from "@/lib/server/page-guards";
 
 export const dynamic = "force-dynamic";
 
 export default async function NewProductPage() {
+  await requirePagePermission("products.create");
   const categories = await getCategories();
   return (
     <div className="mx-auto max-w-6xl">

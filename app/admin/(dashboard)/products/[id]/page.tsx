@@ -4,6 +4,8 @@ import { ArrowLeft, ExternalLink } from "lucide-react";
 import ProductForm from "@/components/admin/ProductForm";
 import { getCategories } from "@/lib/db/categories";
 import { getProductById } from "@/lib/db/products";
+import { actorHas } from "@/lib/server/authorization";
+import { requireAnyPagePermission } from "@/lib/server/page-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +15,8 @@ export default async function EditProductPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const actor = await requireAnyPagePermission(["products.view", "products.edit"]);
+  const canEdit = actorHas(actor, "products.edit");
   const [product, categories] = await Promise.all([getProductById(id), getCategories()]);
   if (!product) notFound();
 
@@ -31,13 +35,14 @@ export default async function EditProductPage({
         </Link>
       </div>
       <div className="mb-5">
-        <p className="eyebrow">Edit product</p>
+        <p className="eyebrow">{canEdit ? "Edit product" : "Product details"}</p>
         <h1 className="display mt-1 text-3xl font-bold sm:text-4xl">{product.name}</h1>
       </div>
       <ProductForm
         product={product}
         categories={categories}
         uploadEnabled={Boolean(process.env.UPLOADTHING_TOKEN)}
+        readOnly={!canEdit}
       />
     </div>
   );

@@ -4,7 +4,7 @@ config({ path: ".env.local" });
 config();
 
 async function main() {
-  const { getDb, getMongoClient, getDatabaseName, isDbConfigured } = await import(
+  const { getDb, getDatabaseName, isDbConfigured } = await import(
     "../lib/db/client"
   );
 
@@ -17,7 +17,6 @@ async function main() {
   }
 
   const db = await getDb();
-  const client = getMongoClient();
   console.log(`Connected to MongoDB database: ${getDatabaseName()}`);
 
   console.log("Creating indexes…");
@@ -45,6 +44,8 @@ async function main() {
     db.collection("verification").createIndex({ identifier: 1 }),
     db.collection("subscribers").createIndex({ email: 1 }, { unique: true }),
   ]);
+  const { ensureOwnerIndexes } = await import("./lib/owner");
+  await ensureOwnerIndexes();
   console.log("Indexes ready.");
 
   const { fallbackCategories } = await import("../lib/db/categories");
@@ -92,53 +93,48 @@ async function main() {
     { upsert: true },
   );
 
-  const adminEmail = (process.env.ADMIN_EMAIL || "admin@sporsify.com").toLowerCase();
+  const adminEmail = (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
   const adminPassword = process.env.ADMIN_PASSWORD || "";
-  const adminName = process.env.ADMIN_NAME || "Sporsify Admin";
+  const adminName = (process.env.ADMIN_NAME || "Sporsify Owner").trim();
 
-  if (!adminPassword) {
+  if (!adminEmail || !adminPassword) {
     console.warn(
-      "\nADMIN_PASSWORD is not set. Skipping admin creation. Add it to .env.local and run npm run seed again.\n",
+      "\nADMIN_EMAIL or ADMIN_PASSWORD is not set. Skipping Owner bootstrap. Add them to .env.local and run npm run owner:init.\n",
     );
   } else {
-    const existing = await db.collection("user").findOne({ email: adminEmail });
-    if (existing) {
-      await db.collection("user").updateOne(
-        { _id: existing._id },
-        { $set: { role: "admin", name: adminName, updatedAt: new Date() } },
+    const { getOwnerConfig, setOwnerConfig } = await import("../lib/db/admin");
+    const existingOwner = await getOwnerConfig();
+    if (existingOwner) {
+      console.log(
+        `Owner already initialized (${existingOwner.userId}). Credentials were not changed.`,
       );
-      console.log(`Admin account already exists — role ensured for ${adminEmail}.`);
     } else {
-      console.log("Creating admin account…");
-      const { betterAuth } = await import("better-auth");
-      const { mongodbAdapter } = await import("@better-auth/mongo-adapter");
-      const seedAuth = betterAuth({
-        database: mongodbAdapter(client.db(getDatabaseName()), { client }),
-        secret:
-          process.env.BETTER_AUTH_SECRET ||
-          "sporsify-development-secret-change-me-in-production",
-        emailAndPassword: { enabled: true, minPasswordLength: 8 },
-        user: {
-          additionalFields: {
-            phone: { type: "string", required: false, defaultValue: "" },
-          },
-        },
-      });
-      try {
-        await seedAuth.api.signUpEmail({
-          body: { email: adminEmail, password: adminPassword, name: adminName },
+      const {
+        createCredentialUser,
+        ensureCredentialPassword,
+        promoteOwner,
+      } = await import("./lib/owner");
+      let user = (await db
+        .collection("user")
+        .findOne({ email: adminEmail })) as Record<string, unknown> | null;
+      if (!user) {
+        console.log("Creating Owner account…");
+        user = await createCredentialUser({
+          email: adminEmail,
+          password: adminPassword,
+          name: adminName,
         });
-        await db.collection("user").updateOne(
-          { email: adminEmail },
-          { $set: { role: "admin", emailVerified: true, updatedAt: new Date() } },
-        );
-        console.log(`Admin account created: ${adminEmail}`);
-      } catch (error) {
-        console.error("Could not create admin account:", error);
-        console.error(
-          "Tip: if the account exists, sign up once in the UI, then run this seed again to grant admin.",
-        );
       }
+      const userId = String(user._id ?? user.id ?? "");
+      const credentialCreated = await ensureCredentialPassword(
+        userId,
+        adminPassword,
+      );
+      await promoteOwner(userId, adminName);
+      await setOwnerConfig(userId);
+      console.log(
+        `Owner ready: ${adminEmail} (${credentialCreated ? "credential created" : "existing credential kept"}).`,
+      );
     }
   }
 
@@ -567,8 +563,8 @@ async function main() {
   );
 
   console.log("\nSetup complete.");
-  if (adminPassword) {
-    console.log(`Admin login: ${adminEmail} (password from ADMIN_PASSWORD)`);
+  if (adminEmail) {
+    console.log(`Owner login: ${adminEmail}`);
     console.log("Admin URL: /admin/login");
   }
   console.log("Start the store with: npm run dev\n");

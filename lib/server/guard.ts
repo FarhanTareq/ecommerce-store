@@ -18,15 +18,27 @@ export function sessionRole(
   return (session.user as { role?: string }).role;
 }
 
+export function isAdminRole(role: string | undefined): boolean {
+  return role === "admin" || role === "owner";
+}
+
 export async function requireAdmin() {
   const session = await getServerSession();
-  if (!session?.user || sessionRole(session) !== "admin") {
+  if (!session?.user || !isAdminRole(sessionRole(session))) {
     throw new Error("Unauthorized: admin access required");
+  }
+  return session;
+}
+
+export async function requireOwner() {
+  const session = await getServerSession();
+  if (!session?.user || sessionRole(session) !== "owner") {
+    throw new Error("Unauthorized: owner access required");
   }
   return session;
 }
 
 export async function isAdmin() {
   const session = await getServerSession();
-  return Boolean(session?.user && sessionRole(session) === "admin");
+  return Boolean(session?.user && isAdminRole(sessionRole(session)));
 }

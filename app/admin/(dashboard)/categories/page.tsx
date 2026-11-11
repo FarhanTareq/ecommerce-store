@@ -1,9 +1,15 @@
 import CategoryManager from "@/components/admin/CategoryManager";
 import { getAllCategories, getCategoryProductCounts } from "@/lib/db/categories";
+import { requirePagePermission } from "@/lib/server/page-guards";
+import { actorHas } from "@/lib/server/authorization";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminCategoriesPage() {
+  const actor = await requirePagePermission("categories.view");
+  const canCreate = actorHas(actor, "categories.create");
+  const canEdit = actorHas(actor, "categories.edit");
+  const canDelete = actorHas(actor, "categories.delete");
   const [categories, counts] = await Promise.all([
     getAllCategories(),
     getCategoryProductCounts(),
@@ -22,6 +28,9 @@ export default async function AdminCategoriesPage() {
         categories={categories}
         counts={counts}
         uploadEnabled={Boolean(process.env.UPLOADTHING_TOKEN)}
+        canCreate={canCreate}
+        canEdit={canEdit}
+        canDelete={canDelete}
       />
     </div>
   );

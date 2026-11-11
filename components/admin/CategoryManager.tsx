@@ -32,12 +32,18 @@ type CategoryManagerProps = {
   categories: Category[];
   counts: Record<string, number>;
   uploadEnabled: boolean;
+  canCreate: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
 };
 
 export default function CategoryManager({
   categories,
   counts,
   uploadEnabled,
+  canCreate,
+  canEdit,
+  canDelete,
 }: CategoryManagerProps) {
   const router = useRouter();
   const [editing, setEditing] = useState<Category | null>(null);
@@ -124,7 +130,8 @@ export default function CategoryManager({
   }
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[0.85fr_1.35fr]">
+    <div className={cn("grid gap-5", (editing ? canEdit : canCreate) && "xl:grid-cols-[0.85fr_1.35fr]")}>
+      {(editing ? canEdit : canCreate) ? (
       <form
         onSubmit={submit}
         className="h-fit rounded-2xl border border-ink/10 bg-white p-5 xl:sticky xl:top-6"
@@ -232,6 +239,7 @@ export default function CategoryManager({
           {editing ? "Save changes" : "Create category"}
         </button>
       </form>
+      ) : null}
 
       <div className="space-y-3">
         {categories.map((category) => {
@@ -274,27 +282,31 @@ export default function CategoryManager({
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => startEdit(category)}
-                  className="grid h-10 w-10 place-items-center rounded-lg border border-ink/10 text-ink/50 transition hover:border-ink hover:text-ink"
-                  aria-label={`Edit ${category.name}`}
-                >
-                  <Pencil className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => remove(category)}
-                  disabled={deleting === category.id}
-                  className="grid h-10 w-10 place-items-center rounded-lg border border-ink/10 text-ink/50 transition hover:border-coral hover:text-coral disabled:opacity-40"
-                  aria-label={`Delete ${category.name}`}
-                >
-                  {deleting === category.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                </button>
+                {canEdit ? (
+                  <button
+                    type="button"
+                    onClick={() => startEdit(category)}
+                    className="grid h-10 w-10 place-items-center rounded-lg border border-ink/10 text-ink/50 transition hover:border-ink hover:text-ink"
+                    aria-label={`Edit ${category.name}`}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                ) : null}
+                {canDelete ? (
+                  <button
+                    type="button"
+                    onClick={() => remove(category)}
+                    disabled={deleting === category.id}
+                    className="grid h-10 w-10 place-items-center rounded-lg border border-ink/10 text-ink/50 transition hover:border-coral hover:text-coral disabled:opacity-40"
+                    aria-label={`Delete ${category.name}`}
+                  >
+                    {deleting === category.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </button>
+                ) : null}
               </div>
             </article>
           );
@@ -303,7 +315,9 @@ export default function CategoryManager({
         {!categories.length ? (
           <div className="rounded-2xl border border-dashed border-ink/20 bg-white p-8 text-center">
             <Plus className="mx-auto h-7 w-7 text-ink/25" />
-            <p className="mt-2 text-sm text-ink/50">No categories yet. Create your first one.</p>
+            <p className="mt-2 text-sm text-ink/50">
+              {canCreate ? "No categories yet. Create your first one." : "No categories yet."}
+            </p>
           </div>
         ) : null}
       </div>

@@ -1,9 +1,12 @@
 import CouponManager from "@/components/admin/CouponManager";
 import { getCoupons } from "@/lib/db/coupons";
+import { requirePagePermission } from "@/lib/server/page-guards";
+import { actorHas } from "@/lib/server/authorization";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminCouponsPage() {
+  const actor = await requirePagePermission("coupons.view");
   const coupons = await getCoupons();
 
   return (
@@ -15,7 +18,12 @@ export default async function AdminCouponsPage() {
           Create extra discounts for campaigns, athletes and loyal customers.
         </p>
       </div>
-      <CouponManager coupons={coupons} />
+      <CouponManager
+        coupons={coupons}
+        canCreate={actorHas(actor, "coupons.create")}
+        canEdit={actorHas(actor, "coupons.edit")}
+        canDelete={actorHas(actor, "coupons.delete")}
+      />
     </div>
   );
 }

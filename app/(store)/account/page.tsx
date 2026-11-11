@@ -41,7 +41,9 @@ export default async function AccountPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            {role === "admin" ? (
+            {role === "owner" ? (
+              <Link href="/owner" className="btn-dark px-4 py-2">Owner panel</Link>
+            ) : role === "admin" ? (
               <Link href="/admin" className="btn-dark px-4 py-2">Admin panel</Link>
             ) : null}
             <SignOutButton />

@@ -4,21 +4,42 @@ import OrderStatusBadge from "@/components/site/OrderStatusBadge";
 import { getOrders } from "@/lib/db/orders";
 import { orderStatusLabels, paymentMethodLabels, paymentStatusLabels } from "@/lib/order-status";
 import { formatBDT, formatDate } from "@/lib/utils";
+import { getAdminPageActor } from "@/lib/server/page-guards";
+import {
+  allowedOrderStatuses,
+  firstAllowedAdminPath,
+} from "@/lib/permissions";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
-
-const statuses = ["all", "pending", "confirmed", "packed", "shipped", "delivered", "cancelled"];
 
 export default async function AdminOrdersPage({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string; status?: string; page?: string }>;
 }) {
+  const actor = await getAdminPageActor();
+  const allowedStatuses = allowedOrderStatuses(actor.permissions);
+  if (!actor.isOwner && allowedStatuses.length === 0) {
+    redirect(firstAllowedAdminPath(actor.permissions));
+  }
   const params = await searchParams;
   const q = params.q?.trim() ?? "";
-  const status = params.status ?? "all";
+  const requestedStatus = params.status ?? "all";
+  const status =
+    requestedStatus === "all" ||
+    allowedStatuses.includes(requestedStatus as (typeof allowedStatuses)[number])
+      ? requestedStatus
+      : "all";
   const page = Math.max(1, Number(params.page ?? "1") || 1);
-  const result = await getOrders({ search: q, status, page, pageSize: 20 });
+  const result = await getOrders({
+    search: q,
+    status,
+    statuses: status === "all" && !actor.isOwner ? allowedStatuses : undefined,
+    page,
+    pageSize: 20,
+  });
+  const statuses = ["all", ...allowedStatuses];
 
   function href(nextPage = page, nextStatus = status) {
     const search = new URLSearchParams();

@@ -5,6 +5,8 @@ import DeleteProductButton from "@/components/admin/DeleteProductButton";
 import { getAllProductsForAdmin, getProductCounts } from "@/lib/db/products";
 import { getSalePrice } from "@/lib/pricing";
 import { formatBDT } from "@/lib/utils";
+import { requirePagePermission } from "@/lib/server/page-guards";
+import { actorHas } from "@/lib/server/authorization";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +15,10 @@ export default async function AdminProductsPage({
 }: {
   searchParams: Promise<{ q?: string; page?: string }>;
 }) {
+  const actor = await requirePagePermission("products.view");
+  const canCreate = actorHas(actor, "products.create");
+  const canEdit = actorHas(actor, "products.edit");
+  const canDelete = actorHas(actor, "products.delete");
   const params = await searchParams;
   const q = params.q?.trim() ?? "";
   const page = Math.max(1, Number(params.page ?? "1") || 1);
@@ -39,9 +45,11 @@ export default async function AdminProductsPage({
             {counts.total} products · {counts.active} active · {counts.lowStock} low stock
           </p>
         </div>
-        <Link href="/admin/products/new" className="btn-dark px-4 py-2.5">
-          <Plus className="h-4 w-4" /> Add product
-        </Link>
+        {canCreate ? (
+          <Link href="/admin/products/new" className="btn-dark px-4 py-2.5">
+            <Plus className="h-4 w-4" /> Add product
+          </Link>
+        ) : null}
       </div>
 
       <form className="mt-5 flex gap-2">
@@ -123,14 +131,20 @@ export default async function AdminProductsPage({
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">
-                        <Link
-                          href={`/admin/products/${product.id}`}
-                          className="grid h-9 w-9 place-items-center rounded-lg border border-ink/10 text-ink/50 transition hover:border-ink hover:text-ink"
-                          aria-label={`Edit ${product.name}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Link>
-                        <DeleteProductButton id={product.id} name={product.name} />
+                        {canEdit ? (
+                          <Link
+                            href={`/admin/products/${product.id}`}
+                            className="grid h-9 w-9 place-items-center rounded-lg border border-ink/10 text-ink/50 transition hover:border-ink hover:text-ink"
+                            aria-label={`Edit ${product.name}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Link>
+                        ) : null}
+                        <DeleteProductButton
+                          id={product.id}
+                          name={product.name}
+                          canDelete={canDelete}
+                        />
                       </div>
                     </td>
                   </tr>
@@ -141,7 +155,11 @@ export default async function AdminProductsPage({
         </div>
         {!result.items.length ? (
           <div className="p-10 text-center text-sm text-ink/45">
-            {q ? `No products match “${q}”.` : "No products yet. Add your first product."}
+            {q
+              ? `No products match “${q}”.`
+              : canCreate
+                ? "No products yet. Add your first product."
+                : "No products yet."}
           </div>
         ) : null}
       </div>
